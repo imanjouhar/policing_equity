@@ -1,0 +1,25 @@
+# ──────────────────────────────────────────────────────────────────────
+# Policing Equity — Python Dependencies
+# DLBDSMLUSL01 Task 2 | Iman Jouhar | 21 April 2026
+#
+# Install:  pip install -r requirements.txt
+# Requires: Python 3.9+
+# ──────────────────────────────────────────────────────────────────────
+
+# Core data processing
+numpy>=1.23                # Array operations, linear algebra
+pandas>=1.5                # DataFrame manipulation, CSV I/O
+scipy>=1.10                # Hierarchical clustering (linkage, dendrogram)
+
+# Machine learning
+scikit-learn>=1.2          # PCA, MDS, LLE, k-Means, GMM, DBSCAN,
+                           # Agglomerative, StandardScaler, silhouette,
+                           # Davies-Bouldin, Calinski-Harabasz, ARI
+
+# Visualisation
+plotly>=5.15               # Interactive HTML charts (data story)
+matplotlib>=3.6            # Static PNG figures (Word document)
+
+# Pipeline utilities
+joblib>=1.2                # Artifact serialisation (model_artifacts.joblib)
+pyarrow>=10.0              # Parquet I/O (raw_subset.parquet)
