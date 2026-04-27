@@ -1120,7 +1120,7 @@ p {{ margin-bottom:16px; color:#444; }}
 
 <section>
     <div class="section-num">Part IV</div>
-    <h2>From 87 columns to a usable dataset</h2>
+    <h2>From 109 columns to a usable dataset</h2>
     <p>The policing event files contain 109 unique columns — far too many for clustering. After removing structurally absent fields (see Part I) and engineering numeric features, {n_features} survived. Principal Component Analysis then compressed these into {n95} components, retaining {cumul95:.1f}% of the variance ({100-cumul95:.1f}% loss). This step is essential: without it, the clustering algorithm would be overwhelmed by redundant and correlated features.</p>
     <div class="chart-wrap">
         {_to_html(charts["pca"]) if charts["pca"] else "<p>Data not available</p>"}
