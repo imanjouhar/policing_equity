@@ -19,7 +19,7 @@ those gaps.
 
 ## Methodology
 
-The pipeline follows a structured workflow from raw data to actionable insight:
+The pipeline follows a structured workflow from raw data to a data story:
 
 **Data preparation** — 12 CSV files are loaded with MD5 deduplication and
 schema normalisation. The full dataset also includes American Community Survey
@@ -38,7 +38,7 @@ variance.
 **Feature engineering** — Categorical variables are encoded via one-hot and
 frequency encoding. Equity-relevant ratio features are generated (e.g.
 force-per-arrest rate, racial arrest ratio). Low-variance features and highly
-correlated pairs (|r| > 0.95) are pruned, yielding 11 final features.
+correlated pairs (|r| > 0.95) are pruned, reaching 11 final features.
 
 **Dimensionality reduction** — Three techniques are compared: PCA, MDS, and
 LLE. PCA is selected as the primary method, compressing 11 features into 7
@@ -108,7 +108,7 @@ All outputs are written to the `outputs/` directory:
 | File | Description |
 |------|-------------|
 | `equity_data_story.html` | Interactive 11-part scrollable report with 13 Plotly charts |
-| `model_artifacts.joblib` | Serialised pipeline artifacts for report generation |
+| `model_artifacts.joblib` | Serialised pipeline for report generation |
 | `raw_subset.csv` | Labelled data subset (5,000 sampled records) for cluster profiling |
 | `model_comparison.csv` | Four-algorithm validity metrics |
 | `dr_comparison.csv` | Dimensionality reduction method comparison |
