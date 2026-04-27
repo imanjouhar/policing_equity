@@ -73,9 +73,10 @@ def _to_html(fig):
 
 
 def chart_city_map():
-    """Map of the four cities in the dataset with record counts."""
+    """Map of the five cities in the dataset with record counts."""
     cities = [
         {"name": "Minneapolis", "lat": 44.98, "lon": -93.27, "records": "736k", "detail": "UoF + Vehicle Stops"},
+        {"name": "Indianapolis", "lat": 39.77, "lon": -86.16, "records": "163k", "detail": "Field Interviews + UoF"},
         {"name": "Dallas", "lat": 32.78, "lon": -96.80, "records": "12k", "detail": "Use of Force"},
         {"name": "Austin", "lat": 30.27, "lon": -97.74, "records": "131", "detail": "UoF / Officer-Involved"},
         {"name": "Los Angeles", "lat": 34.05, "lon": -118.24, "records": "541k", "detail": "UoF + Arrests + Reports"},
@@ -84,7 +85,7 @@ def chart_city_map():
     fig = go.Figure()
     
     # Size bubbles by log of records
-    sizes = [45, 25, 12, 42]
+    sizes = [45, 30, 25, 12, 42]
     
     fig.add_trace(go.Scattergeo(
         lat=[c["lat"] for c in cities],
@@ -93,12 +94,12 @@ def chart_city_map():
         hoverinfo="text",
         marker=dict(
             size=sizes,
-            color=["#8C9BAA","#D4A574","#7BC07B","#9EA3AB"],
+            color=["#8C9BAA","#6B8E9B","#D4A574","#7BC07B","#9EA3AB"],
             line=dict(width=1.5, color="white"),
             opacity=0.7,
         ),
         mode="markers+text",
-        textposition=["top center","bottom center","bottom center","bottom center"],
+        textposition=["top center","top center","bottom center","bottom center","bottom center"],
         texttemplate=[f"<b>{c['name']}</b><br>{c['records']}" for c in cities],
         textfont=dict(size=11, color="#333"),
     ))
@@ -117,7 +118,7 @@ def chart_city_map():
         height=320,
         margin=dict(l=0, r=0, t=40, b=0),
         template="plotly_white",
-        title=dict(text="Four cities, 1.45 million policing records",
+        title=dict(text="Five cities, 1.45 million policing records",
                    font=dict(size=14)),
         showlegend=False,
     )
@@ -353,7 +354,7 @@ def chart_pca(artifacts):
         showarrow=True, arrowhead=2, row=1, col=2)
     fig.update_layout(height=360, margin=dict(l=40,r=40,t=70,b=40),
         template="plotly_white",
-        title=dict(text=f"13 features → {n95} components ({100-cumul[n95-1]:.1f}% info loss)",
+        title=dict(text=f"{len(evr)} features \u2192 {n95} components ({100-cumul[n95-1]:.1f}% info loss)",
                    font=dict(size=16)))
     return fig
 
@@ -637,11 +638,13 @@ def chart_officer_race(data_dir=None):
 
 def chart_socioeconomic(data_dir=None):
     """Socioeconomic context: poverty, income, unemployment per city."""
-    # Census QuickFacts / ACS for the four cities in the dataset
+    # Census QuickFacts / ACS for the five cities in the dataset
     # Source: US Census Bureau (2020) — already in references
     cities_data = [
         {"city": "Minneapolis", "poverty": 19.1, "median_income": 65_000,
          "unemployment": 5.3, "college": 51.0, "peak_disparity": 1.85},
+        {"city": "Indianapolis", "poverty": 17.1, "median_income": 50_300,
+         "unemployment": 6.0, "college": 30.0, "peak_disparity": None},
         {"city": "Dallas", "poverty": 17.5, "median_income": 54_700,
          "unemployment": 5.8, "college": 35.0, "peak_disparity": 2.76},
         {"city": "Los Angeles", "poverty": 17.0, "median_income": 65_300,
@@ -985,10 +988,14 @@ def generate_html(artifacts, data_dir=None):
     n_incidents = int(artifacts.get("n_raw", sum(pd.Series(artifacts["champion_labels"]).value_counts())))
     n_no_race = int(artifacts.get("n_no_race", 405000))
     pct_no_race = (n_no_race / n_incidents * 100) if n_incidents > 0 else 0
+    # Minneapolis records (stops + UoF): compute share of total
+    mpls_records = 710472 + 25801  # Vehicle Stops + UoF
+    mpls_pct = round(mpls_records / n_incidents * 100) if n_incidents > 0 else 51
     k = int(artifacts["champion_k"])
     k_sel = artifacts.get("k_selection", {})
     consensus_k = int(k_sel.get("chosen_k", k))  # k from 5-method vote (3-7)
     core_pct = artifacts.get("gmm_core_pct", 93.9)
+    kpi_records_detail = "5 cities \u00b7 2001\u20132018"
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -1064,7 +1071,7 @@ p {{ margin-bottom:16px; color:#444; }}
 </div>
 
 <div class="kpi-strip">
-    {_kpi("Records analysed", f"{n_incidents:,}", "4 cities · 2008–2018")}
+    {_kpi("Records analysed", f"{n_incidents:,}", kpi_records_detail)}
     {_kpi("Policing patterns", str(k), f"found by {champ_name}")}
     {_kpi("Peak disparity", "3.8×", "Black arrests vs. population share")}
     {_kpi("Race not recorded", f"{n_no_race:,}", f"{pct_no_race:.0f}% of all records")}
@@ -1085,26 +1092,26 @@ p {{ margin-bottom:16px; color:#444; }}
     <p>Before any analysis, the data must be audited. The CPE dataset contains {n_csv_total} unique CSV files (after MD5 deduplication): {n_csv_policing} policing event files and {n_csv_acs} American Community Survey (ACS) Census tables covering poverty, income, employment, education, and housing for each department. The clustering pipeline uses the {n_csv_policing} policing files; the ACS tables could not be joined because the incident records carry no census tract identifier. Across these policing files, key demographic fields — race, gender, incident reason, and geographic coordinates — are missing at very different rates depending on the type of policing record. This is not random loss; it reflects departmental recording practices. Vehicle stops record race and gender reliably, while use-of-force and incident reports often omit them entirely.</p>
     <div class="chart-wrap">
         {_to_html(charts["missing"]) if charts.get("missing") else "<p>Missing pattern data not available.</p>"}
-        <div class="caption">Missing rates (%) for four key fields across source files. Blue = complete, red = entirely missing. Pattern is structural, not random.</div>
+        <div class="caption">Missing rates (%) for six key fields across source files. Blue = complete, red = entirely missing. Pattern is structural, not random.</div>
     </div>
     <div class="insight"><strong>Why this matters:</strong> Missingness that depends on incident type violates the Missing Completely at Random (MCAR) assumption. Imputing these fields without acknowledging the pattern would inject bias. The pipeline addresses this by adding binary missingness flags as features, so that the clustering algorithm can detect recording gaps as a structural pattern — which it does (Cluster C6).</div>
     <div class="chart-wrap">
         {_to_html(charts["race_coverage"]) if charts.get("race_coverage") else ""}
-        <div class="caption">Race categories recorded per source file. Minneapolis UoF has no Hispanic category. Los Angeles Incidents and Reports ({n_no_race:,} records) have no race column at all.</div>
+        <div class="caption">Race categories recorded per source file. Minneapolis UoF has no Hispanic category. Los Angeles Incidents, Los Angeles Reports, and Indianapolis UoF ({n_no_race:,} records combined) have no race column at all.</div>
     </div>
     <div class="insight"><strong>Blind spot:</strong> Hispanic subjects are invisible in the Minneapolis use-of-force file (25,801 records). Asian subjects appear in most files but at very low rates. Any equity conclusion about these groups is limited to departments that actually record them.</div>
-    <div class="insight"><strong>Where are Dallas and Austin?</strong> The map shows four cities, but the analysis centres on Minneapolis and Los Angeles. Austin contributes only 131 officer-involved-shooting records (0.01% of the dataset) &#x2014; too few to form a distinct cluster. Dallas contributes 11,865 use-of-force records with a rich schema (including officer race, which no other city provides), but its unique columns are dropped during feature alignment because no other department shares them. After pruning, Dallas records are absorbed into clusters dominated by Minneapolis and Los Angeles, which together account for 97% of the data. A city-stratified analysis would be needed to surface Dallas-specific patterns.</div>
+    <div class="insight"><strong>Where are Dallas and Austin?</strong> The map shows five cities, but the analysis centres on Minneapolis and Los Angeles. Austin contributes only 131 officer-involved-shooting records (0.01% of the dataset) &#x2014; too few to form a distinct cluster. Indianapolis contributes 162,504 records (field interviews and use of force), but these files lack race columns, limiting their equity value. Dallas contributes 11,865 use-of-force records with a rich schema (including officer race, which no other city provides), but its unique columns are dropped during feature alignment because no other department shares them. After pruning, Dallas and Indianapolis records are absorbed into clusters dominated by Minneapolis and Los Angeles, which together account for 88% of the data. A city-stratified analysis would be needed to surface city-specific patterns.</div>
 </section>
 
 <section>
     <div class="section-num">Part II</div>
     <h2>The cities behind the numbers</h2>
-    <p>The four cities in this dataset differ in poverty, income, and employment. These socioeconomic indicators provide context for the policing patterns identified in later sections. The Census socioeconomic tables included in the dataset (poverty, income, employment, education, housing) could be joined to policing records if a geographic identifier were available.</p>
+    <p>The five cities in this dataset differ in poverty, income, and employment. These socioeconomic indicators provide context for the policing patterns identified in later sections. The Census socioeconomic tables included in the dataset (poverty, income, employment, education, housing) could be joined to policing records if a geographic identifier were available.</p>
     <div class="chart-wrap">
         {_to_html(charts["socioeconomic"]) if charts.get("socioeconomic") else "<p>Socioeconomic data not available.</p>"}
         <div class="caption">Source: US Census Bureau QuickFacts (2020). The CPE dataset also includes Census tract-level socioeconomic tables for each department, not used here because incident records lack a geographic join key.</div>
     </div>
-    <div class="insight"><strong>What the numbers show:</strong> Los Angeles has the highest peak racial disparity (3.8&#xD7;) with a 17.0% poverty rate. Minneapolis has 19.1% poverty and contributes 57% of all records. Dallas has 17.5% poverty and is the only city recording officer race. Austin has the lowest poverty rate (12.6%) and the smallest sample (131 records). The dataset includes Census socioeconomic tables (poverty, income, employment, education, housing) for each department, which were not integrated into the clustering because the incident records lack a geographic identifier for a row-level join.</div>
+    <div class="insight"><strong>What the numbers show:</strong> Los Angeles has the highest peak racial disparity (3.8&#xD7;) with a 17.0% poverty rate. Minneapolis has 19.1% poverty and contributes {mpls_pct}% of all records. Dallas has 17.5% poverty and is the only city recording officer race. Austin has the lowest poverty rate (12.6%) and the smallest sample (131 records). The dataset includes Census socioeconomic tables (poverty, income, employment, education, housing) for each department, which were not integrated into the clustering because the incident records lack a geographic identifier for a row-level join.</div>
 </section>
 
 <section>
@@ -1120,7 +1127,7 @@ p {{ margin-bottom:16px; color:#444; }}
 
 <section>
     <div class="section-num">Part IV</div>
-    <h2>From 109 columns to a usable dataset</h2>
+    <h2>From 87 columns to a usable dataset</h2>
     <p>The policing event files contain 109 unique columns — far too many for clustering. After removing structurally absent fields (see Part I) and engineering numeric features, {n_features} survived. Principal Component Analysis then compressed these into {n95} components, retaining {cumul95:.1f}% of the variance ({100-cumul95:.1f}% loss). This step is essential: without it, the clustering algorithm would be overwhelmed by redundant and correlated features.</p>
     <div class="chart-wrap">
         {_to_html(charts["pca"]) if charts["pca"] else "<p>Data not available</p>"}
