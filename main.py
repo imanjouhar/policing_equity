@@ -409,6 +409,11 @@ def feature_engineering(df):
     """ Pipeline with user-specified missing-value bands."""
     section("PART 3 — Feature Engineering")
 
+    # Correct known column typos before race detection
+    if "SUBJECT_RACT" in df.columns and "SUBJECT_RACE" not in df.columns:
+        df = df.rename(columns={"SUBJECT_RACT": "SUBJECT_RACE"})
+        print("    [fix] Renamed SUBJECT_RACT -> SUBJECT_RACE (Indianapolis typo)")
+
     # ── Normalize messy race strings early to ensure proper One-Hot Encoding ──
     race_cols = [c for c in df.columns if "RACE" in c.upper() and "OFFICER" not in c.upper()]
     for rc in race_cols:
@@ -420,6 +425,8 @@ def feature_engineering(df):
                 'H': 'HISPANIC', 'LATINO': 'HISPANIC', 'HISPANIC OR LATINO': 'HISPANIC', 'L': 'HISPANIC',
                 'A': 'ASIAN', 'ASIAN/PACIFIC ISLANDER': 'ASIAN', 'ASIAN OR PACIFIC ISLANDER': 'ASIAN',
                 'K':'ASIAN', 'C':'ASIAN', 'F':'ASIAN', 'P':'ASIAN',
+                'POLYNESIAN': 'ASIAN',
+                'BI-RACIAL': 'OTHER', 'NATIVE AMER': 'OTHER',
                 'NAN': np.nan, 'NO DATA': 'UNKNOWN', 'NOT SPECIFIED': 'UNKNOWN'
             })
 
