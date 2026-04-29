@@ -73,36 +73,75 @@ def _to_html(fig):
 
 
 def chart_city_map():
-    """Map of the five cities in the dataset with record counts."""
-    cities = [
-        {"name": "Minneapolis", "lat": 44.98, "lon": -93.27, "records": "736k", "detail": "UoF + Vehicle Stops"},
-        {"name": "Indianapolis", "lat": 39.77, "lon": -86.16, "records": "163k", "detail": "Field Interviews + UoF"},
-        {"name": "Dallas", "lat": 32.78, "lon": -96.80, "records": "12k", "detail": "Use of Force"},
-        {"name": "Austin", "lat": 30.27, "lon": -97.74, "records": "131", "detail": "UoF / Officer-Involved"},
-        {"name": "Los Angeles", "lat": 34.05, "lon": -118.24, "records": "541k", "detail": "UoF + Arrests + Reports"},
+    """Map of all departments in the dataset with interactive hover details."""
+    depts = [
+        {"name":"Minneapolis",   "county":"Hennepin County, MN",     "lat":44.98, "lon":-93.27,
+         "records":736273, "type":"UoF + Vehicle Stops",    "race":"Yes",  "color":"#2E6DA4"},
+        {"name":"St. Paul",      "county":"Ramsey County, MN",       "lat":44.95, "lon":-93.09,
+         "records":86000,  "type":"Vehicle Stops",           "race":"Yes",  "color":"#5B9BD5"},
+        {"name":"Indianapolis",  "county":"Marion County, IN",       "lat":39.77, "lon":-86.16,
+         "records":10274,  "type":"Use of Force",            "race":"Yes*", "color":"#6B8E9B"},
+        {"name":"Boston",        "county":"Suffolk County, MA",      "lat":42.36, "lon":-71.06,
+         "records":152230, "type":"Field Interviews",        "race":"Yes",  "color":"#4A7C59"},
+        {"name":"Dallas",        "county":"Dallas County, TX",       "lat":32.78, "lon":-96.80,
+         "records":12000,  "type":"Use of Force",            "race":"Yes + Officer", "color":"#D4A574"},
+        {"name":"Austin",        "county":"Travis County, TX",       "lat":30.27, "lon":-97.74,
+         "records":131,    "type":"UoF / Officer-Involved",  "race":"Yes",  "color":"#7BC07B"},
+        {"name":"Los Angeles",   "county":"Los Angeles County, CA",  "lat":34.05, "lon":-118.24,
+         "records":541000, "type":"UoF + Arrests",           "race":"Yes",  "color":"#9EA3AB"},
+        {"name":"San Francisco", "county":"San Francisco County, CA","lat":37.77, "lon":-122.42,
+         "records":394235, "type":"Incident Reports",        "race":"No",   "color":"#CC6666"},
+        {"name":"Alameda County","county":"Alameda County, CA",      "lat":37.77, "lon":-122.23,
+         "records":0,      "type":"Incident Reports",        "race":"TBD",  "color":"#CC9966"},
+        {"name":"Seattle area",  "county":"King County, WA",         "lat":47.60, "lon":-122.33,
+         "records":0,      "type":"Use of Force",            "race":"TBD",  "color":"#7799BB"},
+        {"name":"Charlotte",     "county":"Mecklenburg County, NC",  "lat":35.23, "lon":-80.84,
+         "records":0,      "type":"Use of Force",            "race":"TBD",  "color":"#AA7799"},
+        {"name":"Orlando area",  "county":"Orange County, FL",       "lat":28.54, "lon":-81.38,
+         "records":0,      "type":"Use of Force",            "race":"TBD",  "color":"#88AA77"},
     ]
     
+    import math
     fig = go.Figure()
     
-    # Size bubbles by log of records
-    sizes = [45, 30, 25, 12, 42]
+    # Size: log-scaled by record count (min 10 for unknowns)
+    sizes = [max(10, int(math.log2(max(d["records"],100)) * 4)) for d in depts]
     
-    fig.add_trace(go.Scattergeo(
-        lat=[c["lat"] for c in cities],
-        lon=[c["lon"] for c in cities],
-        text=[f"<b>{c['name']}</b><br>{c['records']} records<br>{c['detail']}" for c in cities],
-        hoverinfo="text",
-        marker=dict(
-            size=sizes,
-            color=["#8C9BAA","#6B8E9B","#D4A574","#7BC07B","#9EA3AB"],
-            line=dict(width=1.5, color="white"),
-            opacity=0.7,
-        ),
-        mode="markers+text",
-        textposition=["top center","top center","bottom center","bottom center","bottom center"],
-        texttemplate=[f"<b>{c['name']}</b><br>{c['records']}" for c in cities],
-        textfont=dict(size=11, color="#333"),
-    ))
+    # Race status determines opacity: No race = dimmer
+    opacities = [0.5 if d["race"]=="No" else 0.8 for d in depts]
+    
+    for i, d in enumerate(depts):
+        rec_str = f"{d['records']:,}" if d["records"] > 0 else "not yet counted"
+        race_note = ""
+        if d["race"] == "No":
+            race_note = "<br><i style='color:#CC3333'>No race column in this file</i>"
+        elif d["race"] == "Yes*":
+            race_note = "<br><i style='color:#CC8833'>Race column had typo (fixed)</i>"
+        
+        fig.add_trace(go.Scattergeo(
+            lat=[d["lat"]], lon=[d["lon"]],
+            text=[f"<b>{d['name']}</b>"],
+            hovertext=[
+                f"<b>{d['name']}</b><br>"
+                f"{d['county']}<br>"
+                f"<b>{rec_str}</b> records<br>"
+                f"Type: {d['type']}<br>"
+                f"Race data: {d['race']}"
+                f"{race_note}"
+            ],
+            hoverinfo="text",
+            marker=dict(
+                size=sizes[i],
+                color=d["color"],
+                line=dict(width=1.5, color="white"),
+                opacity=opacities[i],
+            ),
+            mode="markers+text",
+            textposition="top center",
+            texttemplate=f"<b>{d['name']}</b>",
+            textfont=dict(size=9, color="#333"),
+            showlegend=False,
+        ))
     
     fig.update_geos(
         scope="usa",
@@ -114,12 +153,15 @@ def chart_city_map():
         projection_type="albers usa",
     )
     
+    total = sum(d["records"] for d in depts)
+    n_depts = len(depts)
     fig.update_layout(
-        height=320,
-        margin=dict(l=0, r=0, t=40, b=0),
+        height=400,
+        margin=dict(l=0, r=0, t=50, b=0),
         template="plotly_white",
-        title=dict(text="Five cities, 1.45 million policing records",
-                   font=dict(size=14)),
+        title=dict(
+            text=f"{n_depts} departments across the US — hover for details",
+            font=dict(size=14)),
         showlegend=False,
     )
     return fig
@@ -638,25 +680,34 @@ def chart_officer_race(data_dir=None):
 
 def chart_socioeconomic(data_dir=None):
     """Socioeconomic context: poverty, income, unemployment per city."""
-    # Census QuickFacts / ACS for the five cities in the dataset
+    # Census QuickFacts / ACS for departments in the dataset
     # Source: US Census Bureau (2020) — already in references
     cities_data = [
         {"city": "Minneapolis", "poverty": 19.1, "median_income": 65_000,
          "unemployment": 5.3, "college": 51.0, "peak_disparity": 1.85},
+        {"city": "St. Paul", "poverty": 18.5, "median_income": 56_600,
+         "unemployment": 5.6, "college": 40.0, "peak_disparity": None},
         {"city": "Indianapolis", "poverty": 17.1, "median_income": 50_300,
          "unemployment": 6.0, "college": 30.0, "peak_disparity": None},
+        {"city": "Boston", "poverty": 18.9, "median_income": 71_800,
+         "unemployment": 5.3, "college": 49.0, "peak_disparity": 2.65},
         {"city": "Dallas", "poverty": 17.5, "median_income": 54_700,
          "unemployment": 5.8, "college": 35.0, "peak_disparity": 2.76},
-        {"city": "Los Angeles", "poverty": 17.0, "median_income": 65_300,
-         "unemployment": 7.4, "college": 34.0, "peak_disparity": 3.80},
         {"city": "Austin", "poverty": 12.6, "median_income": 75_400,
          "unemployment": 3.5, "college": 52.0, "peak_disparity": None},
+        {"city": "Los Angeles", "poverty": 17.0, "median_income": 65_300,
+         "unemployment": 7.4, "college": 34.0, "peak_disparity": 3.80},
+        {"city": "San Francisco", "poverty": 10.3, "median_income": 112_400,
+         "unemployment": 3.4, "college": 58.0, "peak_disparity": None},
+        {"city": "Charlotte", "poverty": 12.8, "median_income": 62_800,
+         "unemployment": 5.1, "college": 43.0, "peak_disparity": None},
+        {"city": "Orlando", "poverty": 14.2, "median_income": 51_800,
+         "unemployment": 5.5, "college": 32.0, "peak_disparity": None},
     ]
     
-    # Note: These figures are from US Census Bureau QuickFacts (2020),
-    # the same source already cited in the references. The ACS CSV files
-    # in the dataset contain tract-level detail but were not parsed here
-    # because the policing incident files lack a tract-level join key.
+    # Note: These figures are from US Census Bureau QuickFacts (2020).
+    # The ACS CSV files in the dataset provide tract-level detail for each
+    # department and can be joined to policing records via district or geocoding.
     
     cities = [c["city"] for c in cities_data]
     
@@ -692,12 +743,13 @@ def chart_socioeconomic(data_dir=None):
     
     # Headroom
     fig.update_yaxes(range=[0, 25], row=1, col=1)
-    fig.update_yaxes(range=[0, 95000], row=1, col=2)
+    fig.update_yaxes(range=[0, 130000], row=1, col=2)
     fig.update_yaxes(range=[0, 10], row=1, col=3)
     
     fig.update_layout(
-        height=380, margin=dict(l=40, r=30, t=70, b=50),
+        height=420, margin=dict(l=40, r=30, t=70, b=80),
         template="plotly_white",
+        xaxis_tickangle=-30, xaxis2_tickangle=-30, xaxis3_tickangle=-30,
         title=dict(text="Socioeconomic context: the cities behind the data",
                    font=dict(size=14)))
     return fig
@@ -995,7 +1047,7 @@ def generate_html(artifacts, data_dir=None):
     k_sel = artifacts.get("k_selection", {})
     consensus_k = int(k_sel.get("chosen_k", k))  # k from 5-method vote (3-7)
     core_pct = artifacts.get("gmm_core_pct", 93.9)
-    kpi_records_detail = "5 cities \u00b7 2001\u20132018"
+    kpi_records_detail = "12 departments \u00b7 2001\u20132018"
 
     html = f'''<!DOCTYPE html>
 <html lang="en">
@@ -1067,7 +1119,7 @@ p {{ margin-bottom:16px; color:#444; }}
 
 <div class="hero">
     <h1>Policing Equity</h1>
-    <p>An unsupervised learning analysis of {n_incidents:,} policing US records.</p>
+    <p> Identifying Disparity Patterns Through Unsupervised Learning and Feature Engineering.</p>
 </div>
 
 <div class="kpi-strip">
@@ -1100,13 +1152,13 @@ p {{ margin-bottom:16px; color:#444; }}
         <div class="caption">Race categories recorded per source file. Minneapolis UoF has no Hispanic category. Los Angeles Incidents, Los Angeles Reports, and Indianapolis UoF ({n_no_race:,} records combined) have no race column at all.</div>
     </div>
     <div class="insight"><strong>Blind spot:</strong> Hispanic subjects are invisible in the Minneapolis use-of-force file (25,801 records). Asian subjects appear in most files but at very low rates. Any equity conclusion about these groups is limited to departments that actually record them.</div>
-    <div class="insight"><strong>Where are Dallas and Austin?</strong> The map shows five cities, but the analysis centres on Minneapolis and Los Angeles. Austin contributes only 131 officer-involved-shooting records (0.01% of the dataset) &#x2014; too few to form a distinct cluster. Indianapolis contributes 162,504 records (field interviews and use of force), but these files lack race columns, limiting their equity value. Dallas contributes 11,865 use-of-force records with a rich schema (including officer race, which no other city provides), but its unique columns are dropped during feature alignment because no other department shares them. After pruning, Dallas and Indianapolis records are absorbed into clusters dominated by Minneapolis and Los Angeles, which together account for 88% of the data. A city-stratified analysis would be needed to surface city-specific patterns.</div>
+    <div class="insight"><strong>Why do some bubbles look dimmer?</strong> Departments shown with reduced opacity (like San Francisco) have policing records that do not include a race column, limiting their value for equity analysis. They still enter the clustering pipeline and contribute to the overall pattern detection, but they cannot be used for racial disparity calculations. Indianapolis had a column typo (SUBJECT_RACT instead of SUBJECT_RACE) that has been corrected. Departments marked "TBD" are present in the dataset but their record counts have not yet been individually verified. Together the dataset spans use of force, vehicle stops, field interviews, arrests, and incident reports across 12 departments in 9 states.</div>
 </section>
 
 <section>
     <div class="section-num">Part II</div>
     <h2>The cities behind the numbers</h2>
-    <p>The five cities in this dataset differ in poverty, income, and employment. These socioeconomic indicators provide context for the policing patterns identified in later sections. The Census socioeconomic tables included in the dataset (poverty, income, employment, education, housing) could be joined to policing records if a geographic identifier were available.</p>
+    <p>The departments in this dataset span cities with very different socioeconomic conditions. These indicators provide context for the policing patterns identified in later sections. The Census socioeconomic tables included in the dataset (poverty, income, employment, education, housing) are available at census-tract level and can be joined to policing records where geographic identifiers exist.</p>
     <div class="chart-wrap">
         {_to_html(charts["socioeconomic"]) if charts.get("socioeconomic") else "<p>Socioeconomic data not available.</p>"}
         <div class="caption">Source: US Census Bureau QuickFacts (2020). The CPE dataset also includes Census tract-level socioeconomic tables for each department, not used here because incident records lack a geographic join key.</div>
