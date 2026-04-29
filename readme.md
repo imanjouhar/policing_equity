@@ -17,6 +17,27 @@ interpretable set of clusters, revealing which communities experience
 disproportionate enforcement — and where officer discretion widens or narrows
 those gaps.
 
+## Known Data Quality Issues
+
+The CPE Kaggle dataset contains two data quality issues that the pipeline
+handles automatically:
+
+1. **Indianapolis column typo (dept 23-00089):** The use-of-force file
+   `23-00089_UOF-P.csv` contains a column named `SUBJECT_RACT` instead
+   of `SUBJECT_RACE`. Without correction, all 10,274 records lose their
+   subject race data silently. The pipeline detects and renames this
+   column before race normalisation (see `feature_engineering()`,
+   line 413).
+
+2. **Duplicate department files (49-0009 / 49-00009):** Two department
+   folders contain identical CSV files under inconsistently zero-padded
+   codes. The pipeline's MD5 hash deduplication (`load_policing_data()`,
+   line 270) catches this automatically, retaining only one copy.
+
+These fixes ensure reproducibility. Running the pipeline on the raw
+Kaggle download produces the same 1,451,318 post-cleaning records
+without manual intervention.
+
 ## Methodology
 
 The pipeline follows a structured workflow from raw data to a data story:
