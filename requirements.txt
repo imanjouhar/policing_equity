@@ -19,6 +19,7 @@ scikit-learn>=1.2          # PCA, MDS, LLE, k-Means, GMM, DBSCAN,
 # Visualisation
 plotly>=5.15               # Interactive HTML charts (data story)
 matplotlib>=3.6            # Static PNG figures (Word document)
+geopandas                  # Geographical clustering per city used for Minneapolis and LA
 
 # Pipeline utilities
 joblib>=1.2                # Artifact serialisation (model_artifacts.joblib)
