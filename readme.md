@@ -17,7 +17,7 @@ interpretable set of clusters, revealing which communities experience
 disproportionate enforcement — and where officer discretion widens or narrows
 those gaps.
 
-## Known Data Quality Issues
+## Handling Data Quality Issues
 
 The CPE Kaggle dataset contains two data quality issues that the pipeline
 handles automatically:
