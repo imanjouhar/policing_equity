@@ -1,19 +1,53 @@
-# Author: Iman Jouhar
-# Course: DLBDSMLUSL01 UNSUPERVISED MACHINE LEARNING AND FEATURE ENGINEERING
-# Task 2: Policing Equity: Identifying Racial Disparity Patterns in US 
-# Policing Records Through Unsupervised Clustering.
-# Date: 21 April 2026
-
 """
-main.py — Policing Equity unsupervised learning.
+main.py — Policing Equity
 
-Loads policing CSV files, performs EDA, feature engineering,
-dimensionality reduction (PCA, MDS, LLE), and compares four
-clustering algorithms found with a consensius testing all
-four clustering algorithms and chosing the best performing 
-one (k-Means, GMM, Agglomerative, DBSCAN).
+Author: Iman Jouhar
+Course: DLBDSMLUSL01 Unsupervised Machine Learning and Feature Engineering
+Task: 2 (Policing Equity)
 
-outputs a report from report.py with a data story in a html file.
+Description:
+This script executes the complete unsupervised machine learning pipeline to identify 
+homogeneous categories of policing incidents. It is structured into 9 parts.
+
+Pipeline Agenda:
+----------------
+PART 1: Data Loading & Deduplication
+        - Locates raw CSVs, performs MD5 hash deduplication, and concatenates records.
+        - Implements a programmatic fix for structural file errors (e.g., Kaggle metadata rows).
+
+PART 2: Exploratory Data Analysis (EDA)
+        - Audits missing-value patterns to determine if missingness is structural or random.
+
+PART 3: Feature Engineering
+        - Standardizes messy categorical strings (e.g., unifying race designations).
+        - Missing Data Triage: drops columns >25% missing, adds binary tracking flags 
+          for 5-25% missingness, and imputes the remainder based on distribution skewness.
+        - Addresses extreme outliers (3x IQR fence, winsorization) and encodes categoricals.
+
+PART 4: Automated Feature Generation
+        - Creates domain-relevant ratio features (e.g., force_per_arrest, racial_arrest_ratio).
+        - Applies log-transformations to heavily skewed distributions.
+
+PART 5: Feature Selection
+        - Removes near-zero variance features.
+        - Prunes highly correlated features (|r| > 0.95) to prevent multicollinearity.
+
+PART 6: Dimensionality Reduction
+        - Compares PCA, Multidimensional Scaling (MDS), and Locally Linear Embedding (LLE). 
+        - Retains PCA components explaining >95% variance as the primary clustering input space.
+
+PART 7: Clustering (Algorithm Comparison)
+        - Computes a 5-method consensus to determine the optimal 'k' (combining Kneedle, 
+          Silhouette, Calinski-Harabasz, Davies-Bouldin, and the Gap Statistic).
+        - Fits and evaluates four algorithms: k-Means, GMM, Agglomerative (Ward), and DBSCAN.
+
+PART 8: Champion Selection
+        - Ranks algorithms via a composite score of internal validity indices.
+        - Validates the stability of the winning partition using a GMM soft-membership overlay.
+
+PART 9: Artifact Persistence & Reporting
+        - Saves the champion model, cleaned dataset, and analytical artifacts.
+        - Triggers `report.py` to generate the interactive HTML data story.
 """
 import os
 import sys
