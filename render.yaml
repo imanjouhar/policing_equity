@@ -1,0 +1,22 @@
+# ─────────────────────────────────────────────────────────────────────────────
+#  render.yaml -- Render Blueprint for the Policing Equity data story.
+#  This is a STATIC SITE: no server, no Docker, no build step. Render just
+#  serves the pre-built Plotly HTML in ./site as a website.
+#
+#  Deploy: push this repo to GitHub, then in Render:
+#    New +  ->  Static Site  ->  pick the policing_equity repo
+#  (or New +  ->  Blueprint, which reads this file automatically).
+#  Render gives you ONE URL, e.g. https://policing-equity.onrender.com
+#  which serves site/index.html -> the full data story with working maps.
+# ─────────────────────────────────────────────────────────────────────────────
+services:
+  - type: web
+    name: policing-equity
+    runtime: static
+    # Nothing to compile -- the HTML is already built by the Python pipeline.
+    buildCommand: ""
+    # The folder Render publishes as the website root. index.html is served
+    # at "/", and the three iframe files (maps + VOD) sit alongside it so the
+    # single URL renders the whole story.
+    staticPublishPath: ./site
+    autoDeploy: true
